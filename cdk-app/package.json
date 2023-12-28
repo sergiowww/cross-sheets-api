@@ -1,0 +1,28 @@
+{
+  "name": "cross-sheets-cdk",
+  "version": "0.1.0",
+  "bin": {
+    "cross-sheets-app": "cdk-app/bin/cross-sheets-app.js"
+  },
+  "scripts": {
+    "build": "../node_modules/.bin/tsc",
+    "watch": "../node_modules/.bin/tsc -w",
+    "test": "../node_modules/.bin/jest",
+    "cdk": "../node_modules/.bin/cdk",
+    "deploy": "cdk deploy",
+    "bootstrap": "cdk bootstrap"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.11",
+    "@types/node": "20.10.4",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "aws-cdk": "2.115.0",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.3.3"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.115.0",
+    "constructs": "^10.0.0"
+  }
+}
