@@ -20,7 +20,8 @@ export const createHandler: APIGatewayProxyHandler = async (event, context): Pro
     group.id = uuidv4();
 
 
-    if (!groupsDao.checkGroupName(group)) {
+    const checkGroup = await groupsDao.checkGroupName(group);
+    if (!checkGroup) {
         return {
             statusCode: 409,
             body: JSON.stringify(new ErrorMessage(`Group name [${group.g_name}] already exists`))
