@@ -6,20 +6,6 @@ import {HttpMethod} from "aws-cdk-lib/aws-apigatewayv2";
 import * as jsonSchema from "aws-cdk-lib/aws-apigateway/lib/json-schema";
 
 export abstract class StackCrudTemplate {
-
-
-
-    private _restApi: RestApi;
-
-    private get restApi(): RestApi {
-        if (!this._restApi) {
-            this._restApi = new RestApi(this.stack, `${this.moduleName}-api`, {
-                restApiName: `${this.moduleName}-api`,
-            })
-        }
-        return this._restApi;
-    }
-
     private _table: Table;
     private get table(): Table {
         if (!this._table) {
@@ -43,7 +29,8 @@ export abstract class StackCrudTemplate {
         private readonly moduleController: string,
         private readonly moduleName: string,
         private readonly tableName: string,
-        private readonly code: AssetCode
+        private readonly code: AssetCode,
+        private readonly restApi: RestApi
     ) {
 
 
@@ -59,10 +46,10 @@ export abstract class StackCrudTemplate {
         this.table.grantReadWriteData(updateFn);
         this.table.grantReadWriteData(deleteFn);
 
-        const groupRequestModel = this.createEntityModel();
+        const requestModel = this.createEntityModel();
 
 
-        const groupsRoot = this.restApi.root.addResource('groups');
+        const groupsRoot = this.restApi.root.addResource(this.moduleName);
         groupsRoot.addMethod(HttpMethod.POST, new LambdaIntegration(createFn), {
             requestValidator: new RequestValidator(this.stack, `create-${this.moduleName}-request-validator`, {
                 restApi: this.restApi,
@@ -70,7 +57,7 @@ export abstract class StackCrudTemplate {
                 validateRequestBody: true
             }),
             requestModels: {
-                'application/json': groupRequestModel
+                'application/json': requestModel
             }
         });
         groupsRoot.addMethod(HttpMethod.GET, new LambdaIntegration(listFn));
@@ -83,7 +70,7 @@ export abstract class StackCrudTemplate {
                 validateRequestBody: true
             }),
             requestModels: {
-                'application/json': groupRequestModel
+                'application/json': requestModel
             }
         });
         groupsById.addMethod(HttpMethod.DELETE, new LambdaIntegration(deleteFn));
