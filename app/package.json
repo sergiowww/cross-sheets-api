@@ -1,0 +1,26 @@
+{
+  "name": "cross-sheets-app",
+  "version": "1.0.0",
+  "description": "CrossFit Personal Records",
+  "main": "app.js",
+  "scripts": {
+    "build": "rm -rf dist && tsc --build && cp -r node_modules dist/",
+    "clean": "tsc --build --clean",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "crossfit"
+  ],
+  "author": "sergiowww",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.130",
+    "@types/uuid": "^9.0.7",
+    "typescript": "~5.3.3",
+    "@aws-sdk/client-dynamodb": "^3.481.0",
+    "@aws-sdk/lib-dynamodb": "^3.481.0"
+  },
+  "dependencies": {
+    "uuid": "^9.0.1"
+  }
+}

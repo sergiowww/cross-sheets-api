@@ -1,26 +1,22 @@
 {
-  "name": "cross-sheets-app",
-  "version": "0.1.0",
-  "bin": {
-    "cross-sheets-app": "bin/cross-sheets-app.js"
-  },
+  "name": "cross-sheets",
+  "version": "1.0.0",
+  "description": "CrossFit benchmarks app",
+  "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
-    "test": "jest",
-    "cdk": "cdk"
+    "build": "npm run build --workspace app",
+    "deploy": "npm run deploy --workspace cdk-app"
   },
-  "devDependencies": {
-    "@types/jest": "^29.5.11",
-    "@types/node": "20.10.4",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.1.1",
-    "aws-cdk": "2.115.0",
-    "ts-node": "^10.9.2",
-    "typescript": "~5.3.3"
-  },
-  "dependencies": {
-    "aws-cdk-lib": "2.115.0",
-    "constructs": "^10.0.0"
-  }
+  "workspaces": [
+    "cdk-app",
+    "app"
+  ],
+  "keywords": [
+    "crossfit",
+    "benchmarks",
+    "pr",
+    "personal-records"
+  ],
+  "author": "sergiowww@gmail.com",
+  "license": "ISC"
 }
