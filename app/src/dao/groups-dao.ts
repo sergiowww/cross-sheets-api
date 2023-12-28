@@ -47,7 +47,7 @@ export class GroupsDao {
         return groupModel;
     }
 
-    private async getById(id: string) {
+    public async getById(id: string) {
         const result = await this.documentClient.get({
             TableName: this.GROUPS_TABLE_NAME,
             Key: {id}

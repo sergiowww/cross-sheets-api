@@ -45,15 +45,18 @@ export const listHandler: APIGatewayProxyHandler = async (event, context): Promi
 };
 
 export const getHandler: APIGatewayProxyHandler = async (event, context): Promise<APIGatewayProxyResult> => {
-    console.log("A request was received", event);
-    console.log("With context: ", context);
-    const responseObject = {
-        action: "get",
+    const id = event.pathParameters?.id as string;
+    const groupModel = await groupsDao.getById(id);
+    if (groupModel) {
+        return {
+            statusCode: 200,
+            body: JSON.stringify(groupModel)
+        };
     }
     return {
-        statusCode: 200,
-        body: JSON.stringify(responseObject)
-    };
+        statusCode: 404,
+        body: JSON.stringify(new ErrorMessage(`Group [${id}] not found`))
+    }
 };
 
 export const updateHandler: APIGatewayProxyHandler = async (event, context): Promise<APIGatewayProxyResult> => {
