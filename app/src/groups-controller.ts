@@ -1,9 +1,12 @@
-import {APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
+import {
+    APIGatewayEventDefaultAuthorizerContext,
+    APIGatewayProxyEventBase,
+    APIGatewayProxyHandler,
+    APIGatewayProxyResult
+} from "aws-lambda";
 import {DynamoDBClient} from "@aws-sdk/client-dynamodb";
 import {DynamoDBDocument} from "@aws-sdk/lib-dynamodb";
 import {GroupModel} from "./models/group-model";
-
-import {v4 as uuidv4} from 'uuid';
 import {ErrorMessage} from "./models/error-message";
 import {GroupsDao} from "./dao/groups-dao";
 
@@ -15,20 +18,25 @@ const documentClient = DynamoDBDocument.from(dynamoClient);
 
 const groupsDao = new GroupsDao(documentClient);
 
+function getGroupFromBody(event: APIGatewayProxyEventBase<APIGatewayEventDefaultAuthorizerContext>) {
+    return JSON.parse(event.body as string) as GroupModel;
+}
+
+function errorNameExists(group: GroupModel) {
+    return {
+        statusCode: 409,
+        body: JSON.stringify(new ErrorMessage(`Group name [${group.g_name}] already exists`))
+    };
+}
+
 export const createHandler: APIGatewayProxyHandler = async (event, context): Promise<APIGatewayProxyResult> => {
-    const group = JSON.parse(event.body as string) as GroupModel;
-    group.id = uuidv4();
-
-
+    const group = getGroupFromBody(event);
     const checkGroup = await groupsDao.checkGroupName(group);
-    if (!checkGroup) {
-        return {
-            statusCode: 409,
-            body: JSON.stringify(new ErrorMessage(`Group name [${group.g_name}] already exists`))
-        };
-    }
 
-    groupsDao.insert(group);
+    if (!checkGroup) {
+        return errorNameExists(group);
+    }
+    await groupsDao.insert(group);
 
     return {
         statusCode: 200,
@@ -61,14 +69,28 @@ export const getHandler: APIGatewayProxyHandler = async (event, context): Promis
 };
 
 export const updateHandler: APIGatewayProxyHandler = async (event, context): Promise<APIGatewayProxyResult> => {
-    console.log("A request was received", event);
-    console.log("With context: ", context);
-    const responseObject = {
-        action: "update",
+    const id = event.pathParameters?.id as string;
+    const group = getGroupFromBody(event);
+    group.id = id;
+
+    const checkGroup = await groupsDao.checkGroupName(group);
+    if (!checkGroup) {
+        return errorNameExists(group);
     }
+
+
+    const groupUpdated = await groupsDao.update(group);
+
+    if (!groupUpdated) {
+        return {
+            statusCode: 422,
+            body: JSON.stringify(new ErrorMessage(`Could not update group [${id}] with name ${group.g_name}`))
+        }
+    }
+
     return {
         statusCode: 200,
-        body: JSON.stringify(responseObject)
+        body: JSON.stringify(groupUpdated)
     };
 };
 

@@ -65,10 +65,10 @@ export class CrossSheetsAppStack extends Stack {
         this.groupTable.grantReadWriteData(createGroupsFn);
         this.groupTable.grantReadData(getGroupsFn);
         this.groupTable.grantReadData(listGroupsFn);
-        this.groupTable.grantWriteData(updateGroupsFn);
+        this.groupTable.grantReadWriteData(updateGroupsFn);
         this.groupTable.grantReadWriteData(deleteGroupsFn);
 
-        const createGroupModel = this.createGroupModel();
+        const groupRequestModel = this.createGroupModel();
 
 
         const groupsRoot = this.restApi.root.addResource('groups');
@@ -79,7 +79,7 @@ export class CrossSheetsAppStack extends Stack {
                 validateRequestBody: true
             }),
             requestModels: {
-                'application/json': createGroupModel
+                'application/json': groupRequestModel
             }
         });
         groupsRoot.addMethod(HttpMethod.GET, new LambdaIntegration(listGroupsFn));
@@ -92,7 +92,7 @@ export class CrossSheetsAppStack extends Stack {
                 validateRequestBody: true
             }),
             requestModels: {
-                'application/json': createGroupModel
+                'application/json': groupRequestModel
             }
         });
         groupsById.addMethod(HttpMethod.DELETE, new LambdaIntegration(deleteGroupsFn));
