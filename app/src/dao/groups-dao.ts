@@ -22,7 +22,7 @@ export class GroupsDao {
     }
 
     public async insert(group: GroupModel) {
-        const result = await this.documentClient.put({
+        await this.documentClient.put({
             TableName: this.GROUPS_TABLE_NAME,
             Item: group
         });
