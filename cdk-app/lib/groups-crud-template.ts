@@ -9,7 +9,7 @@ export class GroupsCrudTemplate extends StackCrudTemplate {
             type: JsonSchemaType.OBJECT,
             required: ["g_name"],
             properties: {
-                name: {
+                g_name: {
                     type: JsonSchemaType.STRING,
                     maxLength: 50,
                     minLength: 2,

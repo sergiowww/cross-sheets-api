@@ -7,14 +7,13 @@ export class TypesCrudTemplate extends StackCrudTemplate {
             type: JsonSchemaType.OBJECT,
             required: ["t_name"],
             properties: {
-                name: {
+                t_name: {
                     type: JsonSchemaType.STRING,
                     maxLength: 30,
                     minLength: 2,
                 }
             }
-        }
-            ;
+        };
     }
 
 }

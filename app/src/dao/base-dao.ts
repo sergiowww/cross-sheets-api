@@ -53,10 +53,22 @@ export abstract class BaseDao<T extends IdEntity> {
         return groupModel;
     }
 
+    public async exists(id: string): Promise<boolean> {
+        const result = await this.documentClient.get({
+            TableName: this.tableName,
+            Key: {id},
+            ConsistentRead: false,
+            ProjectionExpression: 'id'
+        });
+        const record = result.Item;
+        return !!record;
+    }
+
     public async getById(id: string): Promise<T> {
         const result = await this.documentClient.get({
             TableName: this.tableName,
-            Key: {id}
+            Key: {id},
+            ConsistentRead: false
         });
 
         return result.Item as T;
