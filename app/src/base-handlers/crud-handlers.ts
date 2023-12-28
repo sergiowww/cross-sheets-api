@@ -18,7 +18,7 @@ export class CrudHandlers<T extends IdEntity> {
     ) {
     }
 
-    public async deleteHandler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
+    public async deleteHandler(event: APIGatewayProxyEvent, _: Context): Promise<APIGatewayProxyResult> {
         const id = event.pathParameters?.id as string;
 
         const deletedModel = await this.dao.delete(id);
@@ -34,7 +34,7 @@ export class CrudHandlers<T extends IdEntity> {
         }
     }
 
-    public async updateHandler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
+    public async updateHandler(event: APIGatewayProxyEvent, _: Context): Promise<APIGatewayProxyResult> {
         const id = event.pathParameters?.id as string;
         const model = this.getModelFromBody(event);
         model.id = id;
@@ -60,7 +60,7 @@ export class CrudHandlers<T extends IdEntity> {
         };
     }
 
-    public async getHandler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
+    public async getHandler(event: APIGatewayProxyEvent, _: Context): Promise<APIGatewayProxyResult> {
         const id = event.pathParameters?.id as string;
         const model = await this.dao.getById(id);
         if (model) {
@@ -76,7 +76,7 @@ export class CrudHandlers<T extends IdEntity> {
 
     }
 
-    public async listHandler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
+    public async listHandler(_: APIGatewayProxyEvent, _1: Context): Promise<APIGatewayProxyResult> {
         const result = await this.dao.list();
 
         return {
@@ -85,7 +85,7 @@ export class CrudHandlers<T extends IdEntity> {
         };
     }
 
-    public async createHandler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
+    public async createHandler(event: APIGatewayProxyEvent, _: Context): Promise<APIGatewayProxyResult> {
         const model = this.getModelFromBody(event);
         const checkEntity = await this.dao.checkEntityByName(model);
 
