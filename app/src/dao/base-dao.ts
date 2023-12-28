@@ -65,7 +65,7 @@ export abstract class BaseDao<T extends IdEntity> {
     public async update(model: T): Promise<T | null> {
         try {
             const {updateExpression, expressionAttributeValues} = this.updateCriteria(model);
-            const result = await this.documentClient.update({
+            await this.documentClient.update({
                 TableName: this.tableName,
                 Key: {
                     id: model.id
