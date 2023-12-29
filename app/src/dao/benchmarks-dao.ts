@@ -18,11 +18,11 @@ export class BenchmarksDao extends BaseDao<BenchmarkModel> {
 
     protected updateCriteria(model: BenchmarkModel): { updateExpression: string; expressionAttributeValues: ParamObject } {
         return {
-            updateExpression: 'set b_name = :benchmark_name, id_type = :id_type, id_group = :id_group',
+            updateExpression: 'set b_name = :benchmark_name, wod_type = :wod_type, id_group = :id_group',
             expressionAttributeValues: {
                 ':benchmark_name': model.b_name,
                 ':id_group': model.id_group,
-                ':id_type': model.id_type
+                ':wod_type': model.wod_type
             }
         };
     }

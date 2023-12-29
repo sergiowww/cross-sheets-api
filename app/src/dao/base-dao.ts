@@ -8,10 +8,7 @@ export abstract class BaseDao<T extends IdEntity> {
 
     protected abstract readonly tableName: string
 
-    constructor(
-        private readonly documentClient: DynamoDBDocument
-    ) {
-    }
+    constructor(private readonly documentClient: DynamoDBDocument) {}
 
     public async checkEntityByName(probe: T): Promise<boolean> {
         const {filterExpression, expressionAttributeValues} = this.getFilterByNameCriteria(probe);

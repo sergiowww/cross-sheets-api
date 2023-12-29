@@ -5,7 +5,7 @@ export class BenchmarksCrudTemplate extends StackCrudTemplate {
     protected getModelSchema(): JsonSchema {
         return {
             type: JsonSchemaType.OBJECT,
-            required: ["b_name", "id_group", "id_type"],
+            required: ["b_name", "id_group", "wod_type"],
             properties: {
                 b_name: {
                     type: JsonSchemaType.STRING,
@@ -17,9 +17,9 @@ export class BenchmarksCrudTemplate extends StackCrudTemplate {
                     format: 'uuid',
                     minLength: 2
                 },
-                id_type: {
+                wod_type: {
                     type: JsonSchemaType.STRING,
-                    format: 'uuid',
+                    enum: ['Weight', 'Time', 'Reps', 'Round'],
                     minLength: 2
                 }
             }
