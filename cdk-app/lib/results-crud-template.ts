@@ -1,6 +1,5 @@
 import {StackCrudTemplate} from "./stack-crud-template";
 import {JsonSchema, JsonSchemaType} from "aws-cdk-lib/aws-apigateway";
-import {WorkoutType} from "../../app/src/models/workout-type";
 import {Category} from "../../app/src/models/category";
 
 export class ResultsCrudTemplate extends StackCrudTemplate {
