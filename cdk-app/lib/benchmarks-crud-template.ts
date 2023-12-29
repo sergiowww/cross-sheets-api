@@ -1,5 +1,6 @@
 import {StackCrudTemplate} from "./stack-crud-template";
 import {JsonSchema, JsonSchemaType} from "aws-cdk-lib/aws-apigateway";
+import {WorkoutType} from '../../app/src/models/workout-type';
 
 export class BenchmarksCrudTemplate extends StackCrudTemplate {
     protected getModelSchema(): JsonSchema {
@@ -19,7 +20,7 @@ export class BenchmarksCrudTemplate extends StackCrudTemplate {
                 },
                 wod_type: {
                     type: JsonSchemaType.STRING,
-                    enum: ['Weight', 'Time', 'Reps', 'Round'],
+                    enum: Object.values(WorkoutType),
                     minLength: 2
                 }
             }

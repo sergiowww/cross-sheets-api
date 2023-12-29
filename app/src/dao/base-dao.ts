@@ -2,16 +2,20 @@ import {DynamoDBDocument} from "@aws-sdk/lib-dynamodb";
 import {v4 as uuidv4} from "uuid";
 import {IdEntity} from "../models/id-entity";
 
-export type ParamObject = { [key: string]: string };
+export type ParamObject = { [key: string]: any };
 
 export abstract class BaseDao<T extends IdEntity> {
 
     protected abstract readonly tableName: string
 
-    constructor(private readonly documentClient: DynamoDBDocument) {}
+    constructor(private readonly documentClient: DynamoDBDocument) {
+    }
 
     public async checkEntityByName(probe: T): Promise<boolean> {
         const {filterExpression, expressionAttributeValues} = this.getFilterByNameCriteria(probe);
+        if (!filterExpression.length) {
+            return true;
+        }
         const scanResult = await this.documentClient.scan({
             TableName: this.tableName,
             Select: 'COUNT',
@@ -80,7 +84,7 @@ export abstract class BaseDao<T extends IdEntity> {
                     id: model.id
                 },
                 UpdateExpression: updateExpression,
-                ExpressionAttributeValues: expressionAttributeValues
+                ExpressionAttributeValues: expressionAttributeValues,
             });
             return model;
         } catch (e) {
@@ -91,5 +95,10 @@ export abstract class BaseDao<T extends IdEntity> {
 
     protected abstract updateCriteria(model: T): { updateExpression: string, expressionAttributeValues: ParamObject };
 
-    protected abstract getFilterByNameCriteria(probe: T): { filterExpression: string, expressionAttributeValues: ParamObject }
+    protected getFilterByNameCriteria(probe: T): { filterExpression: string, expressionAttributeValues: ParamObject } {
+        return {
+            filterExpression: "",
+            expressionAttributeValues: {}
+        };
+    }
 }

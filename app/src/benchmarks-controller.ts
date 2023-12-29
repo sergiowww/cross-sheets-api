@@ -30,24 +30,12 @@ async function validateForeignKeys(model: BenchmarkModel) {
 }
 
 export const createHandler: APIGatewayProxyHandler = async (event, context) => {
-    const model = crudHandlers.getModelFromBody(event);
-    const validation = await validateForeignKeys(model);
-    if (validation) {
-        return validation;
-    }
-
-    return crudHandlers.createHandler(event, context);
+    return crudHandlers.createHandlerValidation(event, context, validateForeignKeys);
 
 }
 
 export const updateHandler: APIGatewayProxyHandler = async (event, context) => {
-    const model = crudHandlers.getModelFromBody(event);
-    const validation = await validateForeignKeys(model);
-    if (validation) {
-        return validation;
-    }
-
-    return crudHandlers.updateHandler(event, context);
+    return crudHandlers.updateHandlerValidation(event, context, validateForeignKeys);
 
 }
 

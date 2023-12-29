@@ -5,6 +5,7 @@ import {AssetCode, Code} from 'aws-cdk-lib/aws-lambda';
 import {GroupsCrudTemplate} from "./groups-crud-template";
 import {RestApi} from "aws-cdk-lib/aws-apigateway";
 import {BenchmarksCrudTemplate} from "./benchmarks-crud-template";
+import {ResultsCrudTemplate} from "./results-crud-template";
 
 
 export class CrossSheetsAppStack extends Stack {
@@ -52,6 +53,18 @@ export class CrossSheetsAppStack extends Stack {
         );
         groupsCrudTemplate.table.grantReadData(benchmarksCrudTemplate.createFn);
         groupsCrudTemplate.table.grantReadData(benchmarksCrudTemplate.updateFn);
+
+        const resultsCrudTemplate = new ResultsCrudTemplate(
+            this,
+            'results-controller',
+            'results',
+            'results',
+            this.code,
+            this.restApi,
+            benchmarksCrudTemplate.environment
+        );
+        benchmarksCrudTemplate.table.grantReadData(resultsCrudTemplate.createFn);
+        benchmarksCrudTemplate.table.grantReadData(resultsCrudTemplate.updateFn);
 
     }
 

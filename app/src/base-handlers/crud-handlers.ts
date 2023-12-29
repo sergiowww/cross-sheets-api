@@ -10,6 +10,8 @@ import {BaseDao} from "../dao/base-dao";
 import {IdEntity} from "../models/id-entity";
 import {ErrorMessage} from "../models/error-message";
 
+export type ValidationCallback<T extends IdEntity> = (model: T) => Promise<APIGatewayProxyResult | null>;
+
 export class CrudHandlers<T extends IdEntity> {
     constructor(
         private readonly dao: BaseDao<T>,
@@ -34,9 +36,23 @@ export class CrudHandlers<T extends IdEntity> {
         }
     }
 
+    public async updateHandlerValidation(event: APIGatewayProxyEvent, context: Context, validationCallback: ValidationCallback<T>): Promise<APIGatewayProxyResult> {
+        const model = this.getModelFromBody(event);
+        const validation = await validationCallback(model);
+        if (validation) {
+            return validation;
+        }
+        const id = event.pathParameters?.id as string;
+        return await this.update(model, id);
+    }
+
     public async updateHandler(event: APIGatewayProxyEvent, _: Context): Promise<APIGatewayProxyResult> {
         const id = event.pathParameters?.id as string;
         const model = this.getModelFromBody(event);
+        return await this.update(model, id);
+    }
+
+    private async update(model: T, id: string) {
         model.id = id;
 
         const checkEntity = await this.dao.checkEntityByName(model);
@@ -85,8 +101,23 @@ export class CrudHandlers<T extends IdEntity> {
         };
     }
 
+    public async createHandlerValidation(event: APIGatewayProxyEvent, context: Context, validationCallback: ValidationCallback<T>): Promise<APIGatewayProxyResult> {
+        const model = this.getModelFromBody(event);
+        const validation = await validationCallback(model);
+        if (validation) {
+            return validation;
+        }
+
+        return await this.create(model);
+    }
+
+
     public async createHandler(event: APIGatewayProxyEvent, _: Context): Promise<APIGatewayProxyResult> {
         const model = this.getModelFromBody(event);
+        return await this.create(model);
+    }
+
+    private async create(model: T) {
         const checkEntity = await this.dao.checkEntityByName(model);
 
         if (!checkEntity) {
