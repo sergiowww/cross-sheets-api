@@ -1,6 +1,12 @@
 import {RemovalPolicy, Stack} from "aws-cdk-lib";
 import {AssetCode, Function, Runtime} from "aws-cdk-lib/aws-lambda";
-import {LambdaIntegration, Model, RequestValidator, RestApi} from "aws-cdk-lib/aws-apigateway";
+import {
+    CognitoUserPoolsAuthorizer,
+    LambdaIntegration,
+    Model,
+    RequestValidator,
+    RestApi
+} from "aws-cdk-lib/aws-apigateway";
 import {AttributeType, BillingMode, Table} from "aws-cdk-lib/aws-dynamodb";
 import {HttpMethod} from "aws-cdk-lib/aws-apigatewayv2";
 import * as jsonSchema from "aws-cdk-lib/aws-apigateway/lib/json-schema";
@@ -82,6 +88,7 @@ export abstract class StackCrudTemplate {
         private readonly tableName: string,
         private readonly code: AssetCode,
         private readonly restApi: RestApi,
+        private readonly userPoolsAuthorizer: CognitoUserPoolsAuthorizer,
         private additionalEnv: EnvironmentProps = {}
     ) {
 
@@ -96,6 +103,7 @@ export abstract class StackCrudTemplate {
 
         const groupsRoot = this.restApi.root.addResource(this.moduleName);
         groupsRoot.addMethod(HttpMethod.POST, new LambdaIntegration(this.createFn), {
+            authorizer: this.userPoolsAuthorizer,
             requestValidator: new RequestValidator(this.stack, `create-${this.moduleName}-request-validator`, {
                 restApi: this.restApi,
                 requestValidatorName: `${this.moduleName}RequestValidatorForCreating`,
@@ -105,10 +113,15 @@ export abstract class StackCrudTemplate {
                 'application/json': requestModel
             }
         });
-        groupsRoot.addMethod(HttpMethod.GET, new LambdaIntegration(this.listFn));
+        groupsRoot.addMethod(HttpMethod.GET, new LambdaIntegration(this.listFn), {
+            authorizer: this.userPoolsAuthorizer
+        });
         const groupsById = groupsRoot.addResource('{id}');
-        groupsById.addMethod(HttpMethod.GET, new LambdaIntegration(this.getFn));
+        groupsById.addMethod(HttpMethod.GET, new LambdaIntegration(this.getFn), {
+            authorizer: this.userPoolsAuthorizer
+        });
         groupsById.addMethod(HttpMethod.PUT, new LambdaIntegration(this.updateFn), {
+            authorizer: this.userPoolsAuthorizer,
             requestValidator: new RequestValidator(this.stack, `update-${this.moduleName}-request-validator`, {
                 restApi: this.restApi,
                 requestValidatorName: `${this.moduleName}RequestValidatorForUpdating`,
@@ -118,7 +131,9 @@ export abstract class StackCrudTemplate {
                 'application/json': requestModel
             }
         });
-        groupsById.addMethod(HttpMethod.DELETE, new LambdaIntegration(this.deleteFn));
+        groupsById.addMethod(HttpMethod.DELETE, new LambdaIntegration(this.deleteFn), {
+            authorizer: this.userPoolsAuthorizer
+        });
 
 
     }
