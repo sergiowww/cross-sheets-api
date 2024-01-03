@@ -53,6 +53,8 @@ export class CrossSheetsAppStack extends Stack {
             this.cognitoConfig.userPoolsAuthorizer,
             groupsCrudTemplate.environment
         );
+
+
         groupsCrudTemplate.table.grantReadData(benchmarksCrudTemplate.createFn);
         groupsCrudTemplate.table.grantReadData(benchmarksCrudTemplate.updateFn);
 

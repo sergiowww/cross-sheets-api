@@ -9,6 +9,8 @@ import {APIGatewayProxyEvent} from "aws-lambda/trigger/api-gateway-proxy";
 import {BaseDao} from "../dao/base-dao";
 import {IdEntity} from "../models/id-entity";
 import {ErrorMessage} from "../models/error-message";
+import {jwtDecode} from "jwt-decode";
+import {CognitoJwtPayload} from "../models/cognito-jwt-payload";
 
 export type ValidationCallback<T extends IdEntity> = (model: T) => Promise<APIGatewayProxyResult | null>;
 
@@ -46,7 +48,11 @@ export class CrudHandlers<T extends IdEntity> {
         return await this.update(model, id);
     }
 
-    public async updateHandler(event: APIGatewayProxyEvent, _: Context): Promise<APIGatewayProxyResult> {
+    public async updateHandler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
+        const [, bearerContent] = (event.headers['Authorization'] as string).split(' ');
+        const jwtPayload = jwtDecode<CognitoJwtPayload>(bearerContent);
+        const usersRole = jwtPayload["cognito:preferred_role"];
+        console.log(jwtPayload, usersRole);
         const id = event.pathParameters?.id as string;
         const model = this.getModelFromBody(event);
         return await this.update(model, id);
@@ -112,7 +118,7 @@ export class CrudHandlers<T extends IdEntity> {
     }
 
 
-    public async createHandler(event: APIGatewayProxyEvent, _: Context): Promise<APIGatewayProxyResult> {
+    public async createHandler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
         const model = this.getModelFromBody(event);
         return await this.create(model);
     }

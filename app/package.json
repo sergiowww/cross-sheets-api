@@ -4,9 +4,9 @@
   "description": "CrossFit Personal Records",
   "main": "app.js",
   "scripts": {
-    "build": "rm -rf dist && tsc --build && cp -r node_modules dist/",
-    "clean": "tsc --build --clean",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "postbuild": "find ./dist -type d -empty -delete && rimraf ./dist/package*.json",
+    "build": "tsc --build && copyfiles package*.json dist/ && cd dist && npm install --omit=dev",
+    "prebuild": "rimraf dist"
   },
   "keywords": [
     "crossfit"
@@ -14,13 +14,22 @@
   "author": "sergiowww",
   "license": "ISC",
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.130",
-    "@types/uuid": "^9.0.7",
-    "typescript": "~5.3.3",
     "@aws-sdk/client-dynamodb": "^3.481.0",
-    "@aws-sdk/lib-dynamodb": "^3.481.0"
+    "@aws-sdk/lib-dynamodb": "^3.481.0",
+    "@types/aws-lambda": "^8.10.130",
+    "@types/node": "^20.10.6",
+    "@types/uuid": "^9.0.7",
+    "copyfiles": "^2.4.1",
+    "rimraf": "^5.0.5",
+    "typescript": "~5.3.3"
   },
+  "bundledDependencies": true,
   "dependencies": {
+    "jwt-decode": "^4.0.0",
     "uuid": "^9.0.1"
-  }
+  },
+  "bundleDependencies": [
+    "jwt-decode",
+    "uuid"
+  ]
 }

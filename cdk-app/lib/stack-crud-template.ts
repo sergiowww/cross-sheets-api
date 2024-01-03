@@ -1,6 +1,7 @@
 import {RemovalPolicy, Stack} from "aws-cdk-lib";
 import {AssetCode, Function, Runtime} from "aws-cdk-lib/aws-lambda";
 import {
+    AuthorizationType,
     CognitoUserPoolsAuthorizer,
     LambdaIntegration,
     Model,
@@ -92,18 +93,19 @@ export abstract class StackCrudTemplate {
         private additionalEnv: EnvironmentProps = {}
     ) {
 
-        this.table.grantReadWriteData(this.createFn);
         this.table.grantReadData(this.getFn);
         this.table.grantReadData(this.listFn);
-        this.table.grantReadWriteData(this.updateFn);
-        this.table.grantReadWriteData(this.deleteFn);
+        // this.table.grantReadWriteData(this.createFn);
+        // this.table.grantReadWriteData(this.updateFn);
+        // this.table.grantReadWriteData(this.deleteFn);
 
         const requestModel = this.createEntityModel();
 
 
         const groupsRoot = this.restApi.root.addResource(this.moduleName);
-        groupsRoot.addMethod(HttpMethod.POST, new LambdaIntegration(this.createFn), {
+        groupsRoot.addMethod(HttpMethod.POST, this.createLambdaIntegration(this.createFn), {
             authorizer: this.userPoolsAuthorizer,
+            authorizationType: AuthorizationType.COGNITO,
             requestValidator: new RequestValidator(this.stack, `create-${this.moduleName}-request-validator`, {
                 restApi: this.restApi,
                 requestValidatorName: `${this.moduleName}RequestValidatorForCreating`,
@@ -113,15 +115,18 @@ export abstract class StackCrudTemplate {
                 'application/json': requestModel
             }
         });
-        groupsRoot.addMethod(HttpMethod.GET, new LambdaIntegration(this.listFn), {
+        groupsRoot.addMethod(HttpMethod.GET, this.createLambdaIntegration(this.listFn), {
+            authorizationType: AuthorizationType.COGNITO,
             authorizer: this.userPoolsAuthorizer
         });
         const groupsById = groupsRoot.addResource('{id}');
-        groupsById.addMethod(HttpMethod.GET, new LambdaIntegration(this.getFn), {
+        groupsById.addMethod(HttpMethod.GET, this.createLambdaIntegration(this.getFn), {
+            authorizationType: AuthorizationType.COGNITO,
             authorizer: this.userPoolsAuthorizer
         });
-        groupsById.addMethod(HttpMethod.PUT, new LambdaIntegration(this.updateFn), {
+        groupsById.addMethod(HttpMethod.PUT, this.createLambdaIntegration(this.updateFn), {
             authorizer: this.userPoolsAuthorizer,
+            authorizationType: AuthorizationType.COGNITO,
             requestValidator: new RequestValidator(this.stack, `update-${this.moduleName}-request-validator`, {
                 restApi: this.restApi,
                 requestValidatorName: `${this.moduleName}RequestValidatorForUpdating`,
@@ -131,11 +136,16 @@ export abstract class StackCrudTemplate {
                 'application/json': requestModel
             }
         });
-        groupsById.addMethod(HttpMethod.DELETE, new LambdaIntegration(this.deleteFn), {
-            authorizer: this.userPoolsAuthorizer
+        groupsById.addMethod(HttpMethod.DELETE, this.createLambdaIntegration(this.deleteFn), {
+            authorizer: this.userPoolsAuthorizer,
+            authorizationType: AuthorizationType.COGNITO,
         });
 
 
+    }
+
+    private createLambdaIntegration(fn: Function): LambdaIntegration {
+        return new LambdaIntegration(fn);
     }
 
     protected abstract getModelSchema(): jsonSchema.JsonSchema;
