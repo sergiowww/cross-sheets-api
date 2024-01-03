@@ -1,26 +1,21 @@
-import {DynamoDBClient} from "@aws-sdk/client-dynamodb";
 import {DynamoDBDocument} from "@aws-sdk/lib-dynamodb";
 import {BenchmarksDao} from "./dao/benchmarks-dao";
-import {CrudHandlers} from "./base-handlers/crud-handlers";
 import {BenchmarkModel} from "./models/benchmark-model";
 import {APIGatewayProxyHandler} from "aws-lambda";
 import {ErrorMessage} from "./models/error-message";
 import {GroupsDao} from "./dao/groups-dao";
+import {defaultHandlersFactory} from "./base-handlers/default-handlers-factory";
 
-const dynamoClient = new DynamoDBClient({
-    region: process.env.AWS_REGION
-});
 
-const documentClient = DynamoDBDocument.from(dynamoClient);
+const handlers = defaultHandlersFactory<BenchmarkModel>(
+    documentClient => new BenchmarksDao(documentClient),
+    'b_name',
+    'Benchmark'
+);
 
-const benchmarksDao = new BenchmarksDao(documentClient);
-
-const groupDao = new GroupsDao(documentClient);
-
-const crudHandlers = new CrudHandlers<BenchmarkModel>(benchmarksDao, 'b_name', 'Benchmark');
-
-async function validateForeignKeys(model: BenchmarkModel) {
-    if (!await groupDao.exists(model.id_group)) {
+async function validateForeignKeys(model: BenchmarkModel, documentClient: DynamoDBDocument) {
+    const groupsDao = new GroupsDao(documentClient);
+    if (!await groupsDao.exists(model.id_group)) {
         return {
             statusCode: 422,
             body: JSON.stringify(new ErrorMessage(`Group [${model.id_group}] could not be found`))
@@ -30,12 +25,12 @@ async function validateForeignKeys(model: BenchmarkModel) {
 }
 
 export const createHandler: APIGatewayProxyHandler = async (event, context) => {
-    return crudHandlers.createHandlerValidation(event, context, validateForeignKeys);
+    return handlers.createHandlerValidation(event, context, validateForeignKeys);
 
 }
 
 export const updateHandler: APIGatewayProxyHandler = async (event, context) => {
-    return crudHandlers.updateHandlerValidation(event, context, validateForeignKeys);
+    return handlers.updateHandlerValidation(event, context, validateForeignKeys);
 
 }
 
@@ -43,4 +38,4 @@ export const {
     getHandler,
     deleteHandler,
     listHandler,
-} = crudHandlers.getHandlers();
+} = handlers;

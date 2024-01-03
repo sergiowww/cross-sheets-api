@@ -15,6 +15,7 @@
   "license": "ISC",
   "devDependencies": {
     "@aws-sdk/client-dynamodb": "^3.481.0",
+    "@aws-sdk/client-sts": "^3.484.0",
     "@aws-sdk/lib-dynamodb": "^3.481.0",
     "@types/aws-lambda": "^8.10.130",
     "@types/node": "^20.10.6",

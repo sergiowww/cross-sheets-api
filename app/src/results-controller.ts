@@ -1,11 +1,11 @@
 import {DynamoDBClient} from "@aws-sdk/client-dynamodb";
 import {DynamoDBDocument} from "@aws-sdk/lib-dynamodb";
 import {BenchmarksDao} from "./dao/benchmarks-dao";
-import {CrudHandlers} from "./base-handlers/crud-handlers";
 import {APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
 import {ErrorMessage} from "./models/error-message";
 import {ResultModel} from "./models/result-model";
 import {ResultsDao} from "./dao/results-dao";
+import {defaultHandlersFactory} from "./base-handlers/default-handlers-factory";
 
 const dynamoClient = new DynamoDBClient({
     region: process.env.AWS_REGION
@@ -17,7 +17,10 @@ const benchmarksDao = new BenchmarksDao(documentClient);
 
 const resultsDao = new ResultsDao(documentClient);
 
-const crudHandlers = new CrudHandlers<ResultModel>(resultsDao, 'id_benchmark', 'Results');
+const handlers = defaultHandlersFactory<ResultModel>(
+    documentClient => new ResultsDao(documentClient),
+    'id_benchmark',
+    'Results');
 
 async function validateForeignKeys(model: ResultModel): Promise<APIGatewayProxyResult | null> {
 
@@ -52,15 +55,15 @@ async function validateForeignKeys(model: ResultModel): Promise<APIGatewayProxyR
 }
 
 export const createHandler: APIGatewayProxyHandler = async (event, context) => {
-    return crudHandlers.createHandlerValidation(event, context, validateForeignKeys);
+    return handlers.createHandlerValidation(event, context, validateForeignKeys);
 }
 
 export const updateHandler: APIGatewayProxyHandler = async (event, context) => {
-    return crudHandlers.updateHandlerValidation(event, context, validateForeignKeys);
+    return handlers.updateHandlerValidation(event, context, validateForeignKeys);
 }
 
 export const {
     getHandler,
     deleteHandler,
     listHandler,
-} = crudHandlers.getHandlers();
+} = handlers;

@@ -1,7 +1,6 @@
 import {
     APIGatewayEventDefaultAuthorizerContext,
     APIGatewayProxyEventBase,
-    APIGatewayProxyHandler,
     APIGatewayProxyResult,
     Context
 } from "aws-lambda";
@@ -9,16 +8,16 @@ import {APIGatewayProxyEvent} from "aws-lambda/trigger/api-gateway-proxy";
 import {BaseDao} from "../dao/base-dao";
 import {IdEntity} from "../models/id-entity";
 import {ErrorMessage} from "../models/error-message";
-import {jwtDecode} from "jwt-decode";
-import {CognitoJwtPayload} from "../models/cognito-jwt-payload";
+import {DynamoDBDocument} from "@aws-sdk/lib-dynamodb";
 
-export type ValidationCallback<T extends IdEntity> = (model: T) => Promise<APIGatewayProxyResult | null>;
+export type ValidationCallback<T extends IdEntity> = (model: T, documentClient: DynamoDBDocument) => Promise<APIGatewayProxyResult | null>;
 
 export class CrudHandlers<T extends IdEntity> {
     constructor(
         private readonly dao: BaseDao<T>,
         private readonly nameProperty: keyof T,
-        private readonly entityName: string
+        private readonly entityName: string,
+        private readonly documentClient: DynamoDBDocument
     ) {
     }
 
@@ -40,7 +39,7 @@ export class CrudHandlers<T extends IdEntity> {
 
     public async updateHandlerValidation(event: APIGatewayProxyEvent, context: Context, validationCallback: ValidationCallback<T>): Promise<APIGatewayProxyResult> {
         const model = this.getModelFromBody(event);
-        const validation = await validationCallback(model);
+        const validation = await validationCallback(model, this.documentClient);
         if (validation) {
             return validation;
         }
@@ -49,10 +48,6 @@ export class CrudHandlers<T extends IdEntity> {
     }
 
     public async updateHandler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
-        const [, bearerContent] = (event.headers['Authorization'] as string).split(' ');
-        const jwtPayload = jwtDecode<CognitoJwtPayload>(bearerContent);
-        const usersRole = jwtPayload["cognito:preferred_role"];
-        console.log(jwtPayload, usersRole);
         const id = event.pathParameters?.id as string;
         const model = this.getModelFromBody(event);
         return await this.update(model, id);
@@ -109,7 +104,7 @@ export class CrudHandlers<T extends IdEntity> {
 
     public async createHandlerValidation(event: APIGatewayProxyEvent, context: Context, validationCallback: ValidationCallback<T>): Promise<APIGatewayProxyResult> {
         const model = this.getModelFromBody(event);
-        const validation = await validationCallback(model);
+        const validation = await validationCallback(model, this.documentClient);
         if (validation) {
             return validation;
         }
@@ -148,20 +143,5 @@ export class CrudHandlers<T extends IdEntity> {
         return JSON.parse(event.body as string) as T;
     }
 
-    getHandlers(): {
-        createHandler: APIGatewayProxyHandler,
-        listHandler: APIGatewayProxyHandler,
-        getHandler: APIGatewayProxyHandler,
-        updateHandler: APIGatewayProxyHandler,
-        deleteHandler: APIGatewayProxyHandler
-    } {
-        return {
-            createHandler: this.createHandler.bind(this),
-            deleteHandler: this.deleteHandler.bind(this),
-            getHandler: this.getHandler.bind(this),
-            listHandler: this.listHandler.bind(this),
-            updateHandler: this.updateHandler.bind(this)
-        }
-    }
 
 }
