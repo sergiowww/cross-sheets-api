@@ -5,24 +5,39 @@ import {AttributeType, BillingMode, Table} from "aws-cdk-lib/aws-dynamodb";
 import {HttpMethod} from "aws-cdk-lib/aws-apigatewayv2";
 import * as jsonSchema from "aws-cdk-lib/aws-apigateway/lib/json-schema";
 import {CognitoConfig} from "./cognito-config";
+import {TableProps} from "aws-cdk-lib/aws-dynamodb/lib/table";
 
 export type EnvironmentProps = { [key: string]: string };
 
 export abstract class StackCrudTemplate {
+
+    protected abstract get withUsernameAsSortKey(): boolean;
+
     private _table: Table;
     public get table(): Table {
         if (!this._table) {
-            this._table = new Table(this.stack, `${this.moduleName}-table`, {
+
+            let sortKey = {
+                type: AttributeType.STRING,
+                name: 'username'
+            };
+            if (!this.withUsernameAsSortKey) {
+                sortKey = null;
+            }
+            const tableProps: TableProps = {
                 partitionKey: {
                     name: 'id',
                     type: AttributeType.STRING
                 },
+                sortKey,
                 billingMode: BillingMode.PROVISIONED,
                 readCapacity: 1,
                 writeCapacity: 1,
                 tableName: this.tableName,
-                removalPolicy: RemovalPolicy.DESTROY
-            });
+                removalPolicy: RemovalPolicy.DESTROY,
+            };
+
+            this._table = new Table(this.stack, `${this.moduleName}-table`, tableProps);
         }
         return this._table;
     }

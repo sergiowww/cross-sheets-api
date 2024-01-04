@@ -28,4 +28,8 @@ export class BenchmarksCrudTemplate extends StackCrudTemplate {
 
     }
 
+    protected get withUsernameAsSortKey(): boolean {
+        return false;
+    }
+
 }

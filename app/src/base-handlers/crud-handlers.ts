@@ -10,6 +10,7 @@ import {IdEntity} from "../models/id-entity";
 import {ErrorMessage} from "../models/error-message";
 import {DynamoDBDocument} from "@aws-sdk/lib-dynamodb";
 import {AccessDeniedException} from "@aws-sdk/client-account";
+import {getJwtPayloadFromEvent} from "../utils/token-utils";
 
 export type ValidationCallback<T extends IdEntity> = (model: T, documentClient: DynamoDBDocument) => Promise<APIGatewayProxyResult | null>;
 
@@ -126,6 +127,8 @@ export class CrudHandlers<T extends IdEntity> {
 
     public async createHandler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
         const model = this.getModelFromBody(event);
+        const jwtPayload = getJwtPayloadFromEvent(event);
+        model.username = jwtPayload["cognito:username"];
         return await this.create(model);
     }
 

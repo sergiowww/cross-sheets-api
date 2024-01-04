@@ -76,21 +76,16 @@ export abstract class BaseDao<T extends IdEntity> {
     }
 
     public async update(model: T): Promise<T | null> {
-        try {
-            const {updateExpression, expressionAttributeValues} = this.updateCriteria(model);
-            await this.documentClient.update({
-                TableName: this.tableName,
-                Key: {
-                    id: model.id
-                },
-                UpdateExpression: updateExpression,
-                ExpressionAttributeValues: expressionAttributeValues,
-            });
-            return model;
-        } catch (e) {
-            console.log('Error while saving: ', e);
-            return null;
-        }
+        const {updateExpression, expressionAttributeValues} = this.updateCriteria(model);
+        await this.documentClient.update({
+            TableName: this.tableName,
+            Key: {
+                id: model.id
+            },
+            UpdateExpression: updateExpression,
+            ExpressionAttributeValues: expressionAttributeValues,
+        });
+        return model;
     }
 
     protected abstract updateCriteria(model: T): { updateExpression: string, expressionAttributeValues: ParamObject };

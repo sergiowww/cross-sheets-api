@@ -9,18 +9,13 @@ import {
 import {DynamoDBClient} from "@aws-sdk/client-dynamodb";
 import {DynamoDBDocument} from "@aws-sdk/lib-dynamodb";
 import {CrudHandlers, ValidationCallback} from "./crud-handlers";
-import {jwtDecode} from "jwt-decode";
-import {CognitoJwtPayload} from "../models/cognito-jwt-payload";
 import {APIGatewayProxyEvent, APIGatewayProxyResult} from "aws-lambda/trigger/api-gateway-proxy";
 import {CognitoIdentityClient} from "@aws-sdk/client-cognito-identity";
 import {fromCognitoIdentityPool} from "@aws-sdk/credential-provider-cognito-identity";
 import {
     CognitoIdentityCredentialProvider
 } from "@aws-sdk/credential-provider-cognito-identity/dist-types/fromCognitoIdentity";
-
-function getJwtPayload(bearerContent: string): CognitoJwtPayload {
-    return jwtDecode<CognitoJwtPayload>(bearerContent);
-}
+import {getBearerToken, getJwtPayload} from "../utils/token-utils";
 
 type DaoFactory<E extends IdEntity> = (documentClient: DynamoDBDocument) => BaseDao<E>;
 
@@ -45,11 +40,6 @@ function daoBuilderCredentials<E extends IdEntity>(credentials: CognitoIdentityC
     const documentClient = DynamoDBDocument.from(dynamoClient);
 
     return daoFactory(documentClient);
-}
-
-function getBearerToken(event: APIGatewayProxyEventBase<APIGatewayEventDefaultAuthorizerContext>) {
-    const [, bearerContent] = (event.headers['Authorization'] as string).split(' ');
-    return bearerContent;
 }
 
 function getCognitoCredentials(event: APIGatewayProxyEventBase<APIGatewayEventDefaultAuthorizerContext>): CognitoIdentityCredentialProvider {
