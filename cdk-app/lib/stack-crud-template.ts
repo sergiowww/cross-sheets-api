@@ -90,13 +90,6 @@ export abstract class StackCrudTemplate {
     ) {
         const authorizer = this.cognitoConfig.userPoolsAuthorizer;
 
-        this.table.grantReadData(this.getFn);
-        this.table.grantReadData(this.listFn);
-        // this.table.grantReadWriteData(this.createFn);
-        // this.table.grantReadWriteData(this.updateFn);
-        // this.table.grantReadWriteData(this.deleteFn);
-
-
         const requestModel = this.createEntityModel();
         const groupsRoot = this.restApi.root.addResource(this.moduleName);
         groupsRoot.addMethod(HttpMethod.POST, this.createLambdaIntegration(this.createFn), {
@@ -136,9 +129,25 @@ export abstract class StackCrudTemplate {
             authorizer: authorizer,
             authorizationType: AuthorizationType.COGNITO,
         });
-
-
     }
+
+    grantReadForFunction() {
+        this.table.grantReadData(this.listFn);
+        this.table.grantReadData(this.getFn);
+    }
+
+    grantReadWriteForAdminAccess() {
+        this.table.grantReadWriteData(this.cognitoConfig.adminRole);
+    }
+
+    grantReadForUserAccess() {
+        this.table.grantReadData(this.cognitoConfig.userRole);
+    }
+
+    grantReadWriteForUserAccess() {
+        this.table.grantReadWriteData(this.cognitoConfig.userRole);
+    }
+
 
     private createLambdaIntegration(fn: Function): LambdaIntegration {
         return new LambdaIntegration(fn, {proxy: true});

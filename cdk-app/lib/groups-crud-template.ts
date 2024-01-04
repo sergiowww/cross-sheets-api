@@ -18,4 +18,5 @@ export class GroupsCrudTemplate extends StackCrudTemplate {
         }
 
     }
+
 }

@@ -9,6 +9,7 @@ import {BaseDao} from "../dao/base-dao";
 import {IdEntity} from "../models/id-entity";
 import {ErrorMessage} from "../models/error-message";
 import {DynamoDBDocument} from "@aws-sdk/lib-dynamodb";
+import {AccessDeniedException} from "@aws-sdk/client-account";
 
 export type ValidationCallback<T extends IdEntity> = (model: T, documentClient: DynamoDBDocument) => Promise<APIGatewayProxyResult | null>;
 
@@ -22,19 +23,24 @@ export class CrudHandlers<T extends IdEntity> {
     }
 
     public async deleteHandler(event: APIGatewayProxyEvent, _: Context): Promise<APIGatewayProxyResult> {
-        const id = event.pathParameters?.id as string;
+        try {
+            const id = event.pathParameters?.id as string;
 
-        const deletedModel = await this.dao.delete(id);
-        if (deletedModel) {
+            const deletedModel = await this.dao.delete(id);
+            if (deletedModel) {
+                return {
+                    statusCode: 200,
+                    body: JSON.stringify(deletedModel)
+                };
+            }
             return {
-                statusCode: 200,
-                body: JSON.stringify(deletedModel)
-            };
+                statusCode: 422,
+                body: JSON.stringify(new ErrorMessage(`Entity [${id}] not found`))
+            }
+        } catch (e) {
+            return this.handleError(e);
         }
-        return {
-            statusCode: 422,
-            body: JSON.stringify(new ErrorMessage(`Entity [${id}] not found`))
-        }
+
     }
 
     public async updateHandlerValidation(event: APIGatewayProxyEvent, context: Context, validationCallback: ValidationCallback<T>): Promise<APIGatewayProxyResult> {
@@ -54,27 +60,32 @@ export class CrudHandlers<T extends IdEntity> {
     }
 
     private async update(model: T, id: string) {
-        model.id = id;
+        try {
+            model.id = id;
 
-        const checkEntity = await this.dao.checkEntityByName(model);
-        if (!checkEntity) {
-            return this.errorNameExists(model);
-        }
+            const checkEntity = await this.dao.checkEntityByName(model);
+            if (!checkEntity) {
+                return this.errorNameExists(model);
+            }
 
 
-        const modelUpdated = await this.dao.update(model);
+            const modelUpdated = await this.dao.update(model);
 
-        if (!modelUpdated) {
+            if (!modelUpdated) {
+                return {
+                    statusCode: 422,
+                    body: JSON.stringify(new ErrorMessage(`Could not update ${this.entityName} [${id}] with name ${model[this.nameProperty]}`))
+                };
+            }
+
             return {
-                statusCode: 422,
-                body: JSON.stringify(new ErrorMessage(`Could not update ${this.entityName} [${id}] with name ${model[this.nameProperty]}`))
+                statusCode: 200,
+                body: JSON.stringify(modelUpdated)
             };
+        } catch (e) {
+            return this.handleError(e);
         }
 
-        return {
-            statusCode: 200,
-            body: JSON.stringify(modelUpdated)
-        };
     }
 
     public async getHandler(event: APIGatewayProxyEvent, _: Context): Promise<APIGatewayProxyResult> {
@@ -118,18 +129,35 @@ export class CrudHandlers<T extends IdEntity> {
         return await this.create(model);
     }
 
-    private async create(model: T) {
-        const checkEntity = await this.dao.checkEntityByName(model);
+    private async create(model: T): Promise<APIGatewayProxyResult> {
+        try {
+            const checkEntity = await this.dao.checkEntityByName(model);
 
-        if (!checkEntity) {
-            return this.errorNameExists(model);
+            if (!checkEntity) {
+                return this.errorNameExists(model);
+            }
+            await this.dao.insert(model);
+
+            return {
+                statusCode: 200,
+                body: JSON.stringify(model)
+            };
+        } catch (e) {
+            return this.handleError(e);
         }
-        await this.dao.insert(model);
 
-        return {
-            statusCode: 200,
-            body: JSON.stringify(model)
-        };
+    }
+
+    private handleError(e: unknown) {
+        console.error("Did not work: ", e);
+        const accessDenied = e as AccessDeniedException;
+        if (accessDenied.name == "AccessDeniedException") {
+            return {
+                statusCode: 401,
+                body: JSON.stringify(new ErrorMessage('User lacking permission'))
+            };
+        }
+        throw e;
     }
 
     errorNameExists(model: T) {
