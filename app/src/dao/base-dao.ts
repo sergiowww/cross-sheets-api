@@ -1,6 +1,7 @@
 import {DynamoDBDocument} from "@aws-sdk/lib-dynamodb";
-import {v4 as uuidv4} from "uuid";
 import {IdEntity} from "../models/id-entity";
+import {CognitoJwtPayload} from "../models/cognito-jwt-payload";
+import {v4 as uuidv4} from "uuid";
 
 export type ParamObject = { [key: string]: any };
 
@@ -27,8 +28,8 @@ export abstract class BaseDao<T extends IdEntity> {
         return !total;
     }
 
-    public async insert(model: T) {
-        model.id = uuidv4();
+    public async insert(model: T, jwtPayload: CognitoJwtPayload) {
+        model.id = this.generateId(model, jwtPayload);
         await this.documentClient.put({
             TableName: this.tableName,
             Item: model
@@ -95,5 +96,9 @@ export abstract class BaseDao<T extends IdEntity> {
             filterExpression: "",
             expressionAttributeValues: {}
         };
+    }
+
+    protected generateId(model: T, jwtPayload: CognitoJwtPayload): string {
+        return uuidv4();
     }
 }

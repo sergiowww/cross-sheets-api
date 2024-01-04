@@ -1,6 +1,6 @@
 import {StackCrudTemplate} from "./stack-crud-template";
 import {JsonSchema, JsonSchemaType} from "aws-cdk-lib/aws-apigateway";
-import {WorkoutType} from '../../app/src/models/workout-type';
+import {WorkoutType} from '../../../app/src/models/workout-type';
 
 export class BenchmarksCrudTemplate extends StackCrudTemplate {
     protected getModelSchema(): JsonSchema {
@@ -26,10 +26,6 @@ export class BenchmarksCrudTemplate extends StackCrudTemplate {
             }
         };
 
-    }
-
-    protected get withUsernameAsSortKey(): boolean {
-        return false;
     }
 
 }

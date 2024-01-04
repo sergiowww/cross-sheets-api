@@ -121,25 +121,25 @@ export class CrudHandlers<T extends IdEntity> {
             return validation;
         }
 
-        return await this.create(model);
+        return await this.create(model, event);
     }
 
 
     public async createHandler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
         const model = this.getModelFromBody(event);
-        const jwtPayload = getJwtPayloadFromEvent(event);
-        model.username = jwtPayload["cognito:username"];
-        return await this.create(model);
+        return await this.create(model, event);
     }
 
-    private async create(model: T): Promise<APIGatewayProxyResult> {
+    private async create(model: T, event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+        const jwtPayload = getJwtPayloadFromEvent(event);
+        model.username = jwtPayload["cognito:username"];
         try {
             const checkEntity = await this.dao.checkEntityByName(model);
 
             if (!checkEntity) {
                 return this.errorNameExists(model);
             }
-            await this.dao.insert(model);
+            await this.dao.insert(model, jwtPayload);
 
             return {
                 statusCode: 200,

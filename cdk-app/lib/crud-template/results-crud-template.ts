@@ -1,12 +1,8 @@
 import {StackCrudTemplate} from "./stack-crud-template";
 import {JsonSchema, JsonSchemaType} from "aws-cdk-lib/aws-apigateway";
-import {Category} from "../../app/src/models/category";
+import {Category} from "../../../app/src/models/category";
 
 export class ResultsCrudTemplate extends StackCrudTemplate {
-    protected get withUsernameAsSortKey(): boolean {
-        return true;
-    }
-
     protected getModelSchema(): JsonSchema {
         return {
             type: JsonSchemaType.OBJECT,

@@ -2,11 +2,12 @@ import {Stack, StackProps} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 
 import {AssetCode, Code} from 'aws-cdk-lib/aws-lambda';
-import {GroupsCrudTemplate} from "./groups-crud-template";
+import {GroupsCrudTemplate} from "./crud-template/groups-crud-template";
 import {RestApi} from "aws-cdk-lib/aws-apigateway";
-import {BenchmarksCrudTemplate} from "./benchmarks-crud-template";
-import {ResultsCrudTemplate} from "./results-crud-template";
+import {BenchmarksCrudTemplate} from "./crud-template/benchmarks-crud-template";
+import {ResultsCrudTemplate} from "./crud-template/results-crud-template";
 import {CognitoConfig} from "./cognito-config";
+import {Effect, PolicyStatement} from "aws-cdk-lib/aws-iam";
 
 
 export class CrossSheetsAppStack extends Stack {
@@ -70,8 +71,34 @@ export class CrossSheetsAppStack extends Stack {
             this.cognitoConfig,
             benchmarksCrudTemplate.environment
         );
-        resultsCrudTemplate.grantReadWriteForAdminAccess();
-        resultsCrudTemplate.grantReadWriteForUserAccess();
+
+        const fineGrainedPolicyForIndividualResults = new PolicyStatement({
+            actions: [
+                "dynamodb:BatchGetItem",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:GetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:Scan"
+            ],
+            resources: [
+                resultsCrudTemplate.table.tableArn
+            ],
+            conditions: {
+                "ForAllValues:StringLike": {
+                    "dynamodb:LeadingKeys": [
+                        '${cognito-identity.amazonaws.com:email}_*'
+                    ]
+                }
+            }
+            ,
+            effect: Effect.ALLOW
+        });
+        resultsCrudTemplate.table.grantWriteData(this.cognitoConfig.adminRole);
+        resultsCrudTemplate.table.grantWriteData(this.cognitoConfig.userRole);
+        this.cognitoConfig.adminRole.addToPolicy(fineGrainedPolicyForIndividualResults);
+        this.cognitoConfig.userRole.addToPolicy(fineGrainedPolicyForIndividualResults);
 
     }
 

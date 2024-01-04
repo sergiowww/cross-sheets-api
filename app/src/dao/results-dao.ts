@@ -1,5 +1,7 @@
 import {BaseDao, ParamObject} from "./base-dao";
 import {ResultModel} from "../models/result-model";
+import {CognitoJwtPayload} from "../models/cognito-jwt-payload";
+import {v4 as uuidv4} from "uuid";
 
 export class ResultsDao extends BaseDao<ResultModel> {
     protected readonly tableName: string = process.env.RESULTS_TABLE_NAME as string;
@@ -28,6 +30,10 @@ export class ResultsDao extends BaseDao<ResultModel> {
                 ':notes': model.notes
             }
         };
+    }
+
+    protected generateId(model: ResultModel, jwtPayload: CognitoJwtPayload): string {
+        return `${jwtPayload.email}_${uuidv4()}`;
     }
 
 }

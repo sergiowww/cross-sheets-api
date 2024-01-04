@@ -18,8 +18,5 @@ export class GroupsCrudTemplate extends StackCrudTemplate {
         }
 
     }
-    protected get withUsernameAsSortKey(): boolean {
-        return false;
-    }
 
 }
