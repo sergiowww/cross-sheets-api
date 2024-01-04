@@ -1,16 +1,10 @@
 import {RemovalPolicy, Stack} from "aws-cdk-lib";
 import {AssetCode, Function, Runtime} from "aws-cdk-lib/aws-lambda";
-import {
-    AuthorizationType,
-    CognitoUserPoolsAuthorizer,
-    LambdaIntegration,
-    Model,
-    RequestValidator,
-    RestApi
-} from "aws-cdk-lib/aws-apigateway";
+import {AuthorizationType, LambdaIntegration, Model, RequestValidator, RestApi} from "aws-cdk-lib/aws-apigateway";
 import {AttributeType, BillingMode, Table} from "aws-cdk-lib/aws-dynamodb";
 import {HttpMethod} from "aws-cdk-lib/aws-apigatewayv2";
 import * as jsonSchema from "aws-cdk-lib/aws-apigateway/lib/json-schema";
+import {CognitoConfig} from "./cognito-config";
 
 export type EnvironmentProps = { [key: string]: string };
 
@@ -78,6 +72,8 @@ export abstract class StackCrudTemplate {
         const tableEnvironment = `${tablePrefix}_TABLE_NAME`
         const environment: { [key: string]: string } = {};
         environment[tableEnvironment] = this.tableName
+        environment['IDENTITY_POOL_ID'] = this.cognitoConfig.identityPool.identityPoolId
+        environment['ISSUER_NAME'] = this.cognitoConfig.issuerName;
         return {...environment, ...this.additionalEnv};
     }
 
@@ -89,9 +85,10 @@ export abstract class StackCrudTemplate {
         private readonly tableName: string,
         private readonly code: AssetCode,
         private readonly restApi: RestApi,
-        private readonly userPoolsAuthorizer: CognitoUserPoolsAuthorizer,
+        private readonly cognitoConfig: CognitoConfig,
         private additionalEnv: EnvironmentProps = {}
     ) {
+        const authorizer = this.cognitoConfig.userPoolsAuthorizer;
 
         this.table.grantReadData(this.getFn);
         this.table.grantReadData(this.listFn);
@@ -99,12 +96,11 @@ export abstract class StackCrudTemplate {
         // this.table.grantReadWriteData(this.updateFn);
         // this.table.grantReadWriteData(this.deleteFn);
 
+
         const requestModel = this.createEntityModel();
-
-
         const groupsRoot = this.restApi.root.addResource(this.moduleName);
         groupsRoot.addMethod(HttpMethod.POST, this.createLambdaIntegration(this.createFn), {
-            authorizer: this.userPoolsAuthorizer,
+            authorizer: authorizer,
             authorizationType: AuthorizationType.COGNITO,
             requestValidator: new RequestValidator(this.stack, `create-${this.moduleName}-request-validator`, {
                 restApi: this.restApi,
@@ -117,15 +113,15 @@ export abstract class StackCrudTemplate {
         });
         groupsRoot.addMethod(HttpMethod.GET, this.createLambdaIntegration(this.listFn), {
             authorizationType: AuthorizationType.COGNITO,
-            authorizer: this.userPoolsAuthorizer
+            authorizer: authorizer
         });
         const groupsById = groupsRoot.addResource('{id}');
         groupsById.addMethod(HttpMethod.GET, this.createLambdaIntegration(this.getFn), {
             authorizationType: AuthorizationType.COGNITO,
-            authorizer: this.userPoolsAuthorizer
+            authorizer: authorizer
         });
         groupsById.addMethod(HttpMethod.PUT, this.createLambdaIntegration(this.updateFn), {
-            authorizer: this.userPoolsAuthorizer,
+            authorizer: authorizer,
             authorizationType: AuthorizationType.COGNITO,
             requestValidator: new RequestValidator(this.stack, `update-${this.moduleName}-request-validator`, {
                 restApi: this.restApi,
@@ -137,7 +133,7 @@ export abstract class StackCrudTemplate {
             }
         });
         groupsById.addMethod(HttpMethod.DELETE, this.createLambdaIntegration(this.deleteFn), {
-            authorizer: this.userPoolsAuthorizer,
+            authorizer: authorizer,
             authorizationType: AuthorizationType.COGNITO,
         });
 
@@ -145,7 +141,7 @@ export abstract class StackCrudTemplate {
     }
 
     private createLambdaIntegration(fn: Function): LambdaIntegration {
-        return new LambdaIntegration(fn);
+        return new LambdaIntegration(fn, {proxy: true});
     }
 
     protected abstract getModelSchema(): jsonSchema.JsonSchema;

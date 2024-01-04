@@ -1,4 +1,3 @@
-import {DynamoDBClient} from "@aws-sdk/client-dynamodb";
 import {DynamoDBDocument} from "@aws-sdk/lib-dynamodb";
 import {BenchmarksDao} from "./dao/benchmarks-dao";
 import {APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
@@ -7,23 +6,14 @@ import {ResultModel} from "./models/result-model";
 import {ResultsDao} from "./dao/results-dao";
 import {defaultHandlersFactory} from "./base-handlers/default-handlers-factory";
 
-const dynamoClient = new DynamoDBClient({
-    region: process.env.AWS_REGION
-});
-
-const documentClient = DynamoDBDocument.from(dynamoClient);
-
-const benchmarksDao = new BenchmarksDao(documentClient);
-
-const resultsDao = new ResultsDao(documentClient);
 
 const handlers = defaultHandlersFactory<ResultModel>(
     documentClient => new ResultsDao(documentClient),
     'id_benchmark',
     'Results');
 
-async function validateForeignKeys(model: ResultModel): Promise<APIGatewayProxyResult | null> {
-
+async function validateForeignKeys(model: ResultModel, documentClient: DynamoDBDocument): Promise<APIGatewayProxyResult | null> {
+    const benchmarksDao = new BenchmarksDao(documentClient);
     const benchmarkModel = await benchmarksDao.getById(model.id_benchmark);
     if (!benchmarkModel) {
         return {

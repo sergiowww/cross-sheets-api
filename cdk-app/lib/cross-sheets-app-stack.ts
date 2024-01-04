@@ -41,7 +41,7 @@ export class CrossSheetsAppStack extends Stack {
             'groups',
             this.code,
             this.restApi,
-            this.cognitoConfig.userPoolsAuthorizer
+            this.cognitoConfig
         );
         const benchmarksCrudTemplate = new BenchmarksCrudTemplate(
             this,
@@ -50,10 +50,11 @@ export class CrossSheetsAppStack extends Stack {
             'benchmarks',
             this.code,
             this.restApi,
-            this.cognitoConfig.userPoolsAuthorizer,
+            this.cognitoConfig,
             groupsCrudTemplate.environment
         );
 
+        groupsCrudTemplate.table.grantReadWriteData(this.cognitoConfig.adminRole);
 
         groupsCrudTemplate.table.grantReadData(benchmarksCrudTemplate.createFn);
         groupsCrudTemplate.table.grantReadData(benchmarksCrudTemplate.updateFn);
@@ -65,7 +66,7 @@ export class CrossSheetsAppStack extends Stack {
             'results',
             this.code,
             this.restApi,
-            this.cognitoConfig.userPoolsAuthorizer,
+            this.cognitoConfig,
             benchmarksCrudTemplate.environment
         );
         benchmarksCrudTemplate.table.grantReadData(resultsCrudTemplate.createFn);
