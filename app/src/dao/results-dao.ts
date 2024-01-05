@@ -45,8 +45,6 @@ export class ResultsDao extends BaseDao<ResultModel> {
             return previousValue;
         }, {} as ParamObject);
 
-        console.log('expr', expressionAttributeValues);
-        console.log('var', setFields);
         return {
             updateExpression: `set ${setFields}`,
             expressionAttributeValues
