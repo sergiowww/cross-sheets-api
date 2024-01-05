@@ -1,10 +1,23 @@
 import {BaseDao, ParamObject} from "./base-dao";
 import {ResultModel} from "../models/result-model";
 import {CognitoJwtPayload} from "../models/cognito-jwt-payload";
-import {v4 as uuidv4} from "uuid";
 
 export class ResultsDao extends BaseDao<ResultModel> {
     protected readonly tableName: string = process.env.RESULTS_TABLE_NAME as string;
+
+
+    async list(): Promise<ResultModel[]> {
+        const user = this.userData as CognitoJwtPayload;
+        const result = await this.documentClient.query({
+            KeyConditionExpression: 'username = :username',
+            ExpressionAttributeValues: {
+                ':username': user["cognito:username"]
+            },
+            TableName: this.tableName,
+            IndexName: 'username_key'
+        });
+        return result.Items as ResultModel[];
+    }
 
     protected updateCriteria(model: ResultModel): { updateExpression: string; expressionAttributeValues: ParamObject } {
         return {
@@ -32,8 +45,17 @@ export class ResultsDao extends BaseDao<ResultModel> {
         };
     }
 
-    protected generateId(model: ResultModel, jwtPayload: CognitoJwtPayload): string {
-        return `${jwtPayload.email}_${uuidv4()}`;
+    protected getKeyForUpdate(model: ResultModel) {
+        return {
+            id: model.id,
+            username: this.userData["cognito:username"]
+        };
     }
 
+    protected getKeyForUniqueSelection(id: string){
+        return {
+            id,
+            username: this.userData["cognito:username"]
+        };
+    }
 }

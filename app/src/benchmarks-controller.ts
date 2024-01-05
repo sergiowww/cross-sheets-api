@@ -5,16 +5,17 @@ import {APIGatewayProxyHandler} from "aws-lambda";
 import {ErrorMessage} from "./models/error-message";
 import {GroupsDao} from "./dao/groups-dao";
 import {defaultHandlersFactory} from "./base-handlers/default-handlers-factory";
+import {CognitoJwtPayload} from "./models/cognito-jwt-payload";
 
 
 const handlers = defaultHandlersFactory<BenchmarkModel>(
-    documentClient => new BenchmarksDao(documentClient),
+    (documentClient, userData) => new BenchmarksDao(documentClient, userData),
     'b_name',
     'Benchmark'
 );
 
-async function validateForeignKeys(model: BenchmarkModel, documentClient: DynamoDBDocument) {
-    const groupsDao = new GroupsDao(documentClient);
+async function validateForeignKeys(model: BenchmarkModel, documentClient: DynamoDBDocument, userData: CognitoJwtPayload) {
+    const groupsDao = new GroupsDao(documentClient, userData);
     if (!await groupsDao.exists(model.id_group)) {
         return {
             statusCode: 422,

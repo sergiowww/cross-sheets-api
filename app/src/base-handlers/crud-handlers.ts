@@ -11,8 +11,9 @@ import {ErrorMessage} from "../models/error-message";
 import {DynamoDBDocument} from "@aws-sdk/lib-dynamodb";
 import {AccessDeniedException} from "@aws-sdk/client-account";
 import {getJwtPayloadFromEvent} from "../utils/token-utils";
+import {CognitoJwtPayload} from "../models/cognito-jwt-payload";
 
-export type ValidationCallback<T extends IdEntity> = (model: T, documentClient: DynamoDBDocument) => Promise<APIGatewayProxyResult | null>;
+export type ValidationCallback<T extends IdEntity> = (model: T, documentClient: DynamoDBDocument, userData: CognitoJwtPayload) => Promise<APIGatewayProxyResult | null>;
 
 export class CrudHandlers<T extends IdEntity> {
     constructor(
@@ -46,7 +47,8 @@ export class CrudHandlers<T extends IdEntity> {
 
     public async updateHandlerValidation(event: APIGatewayProxyEvent, context: Context, validationCallback: ValidationCallback<T>): Promise<APIGatewayProxyResult> {
         const model = this.getModelFromBody(event);
-        const validation = await validationCallback(model, this.documentClient);
+        const userData = getJwtPayloadFromEvent(event);
+        const validation = await validationCallback(model, this.documentClient, userData);
         if (validation) {
             return validation;
         }
@@ -116,7 +118,8 @@ export class CrudHandlers<T extends IdEntity> {
 
     public async createHandlerValidation(event: APIGatewayProxyEvent, context: Context, validationCallback: ValidationCallback<T>): Promise<APIGatewayProxyResult> {
         const model = this.getModelFromBody(event);
-        const validation = await validationCallback(model, this.documentClient);
+        const userData = getJwtPayloadFromEvent(event);
+        const validation = await validationCallback(model, this.documentClient, userData);
         if (validation) {
             return validation;
         }
@@ -139,7 +142,7 @@ export class CrudHandlers<T extends IdEntity> {
             if (!checkEntity) {
                 return this.errorNameExists(model);
             }
-            await this.dao.insert(model, jwtPayload);
+            await this.dao.insert(model);
 
             return {
                 statusCode: 200,

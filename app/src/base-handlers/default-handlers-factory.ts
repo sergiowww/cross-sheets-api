@@ -16,8 +16,9 @@ import {
     CognitoIdentityCredentialProvider
 } from "@aws-sdk/credential-provider-cognito-identity/dist-types/fromCognitoIdentity";
 import {getBearerToken, getJwtPayload} from "../utils/token-utils";
+import {CognitoJwtPayload} from "../models/cognito-jwt-payload";
 
-type DaoFactory<E extends IdEntity> = (documentClient: DynamoDBDocument) => BaseDao<E>;
+export type DaoFactory<E extends IdEntity> = (documentClient: DynamoDBDocument, userData: CognitoJwtPayload) => BaseDao<E>;
 
 type APIGatewayProxyHandlerValidation<E extends IdEntity> = (event: APIGatewayProxyEvent, context: Context, validationCallback: ValidationCallback<E>) => Promise<APIGatewayProxyResult>;
 
@@ -28,21 +29,24 @@ function daoBuilderGeneric<E extends IdEntity>(daoFactory: DaoFactory<E>): BaseD
     });
 
     const documentClient = DynamoDBDocument.from(dynamoClient);
-    return daoFactory(documentClient);
+    const jwtPayload = null as unknown as CognitoJwtPayload;
+    return daoFactory(documentClient, jwtPayload);
 }
 
-function daoBuilderCredentials<E extends IdEntity>(credentials: CognitoIdentityCredentialProvider, daoFactory: DaoFactory<E>): BaseDao<E> {
+export function daoBuilderCredentials<E extends IdEntity>(event: APIGatewayProxyEvent, daoFactory: DaoFactory<E>): BaseDao<E> {
+    const credentials = getCognitoCredentials(event);
     const dynamoClient = new DynamoDBClient({
-        region: process.env.AWS_REGION,
-        credentials: credentials
+        credentials,
+        region: process.env.AWS_REGION
     });
 
     const documentClient = DynamoDBDocument.from(dynamoClient);
-
-    return daoFactory(documentClient);
+    const bearerContent = getBearerToken(event);
+    const jwtPayload = getJwtPayload(bearerContent);
+    return daoFactory(documentClient, jwtPayload);
 }
 
-function getCognitoCredentials(event: APIGatewayProxyEventBase<APIGatewayEventDefaultAuthorizerContext>): CognitoIdentityCredentialProvider {
+export function getCognitoCredentials(event: APIGatewayProxyEventBase<APIGatewayEventDefaultAuthorizerContext>): CognitoIdentityCredentialProvider {
     const bearerContent = getBearerToken(event);
     const jwtPayload = getJwtPayload(bearerContent);
     const issuerName = process.env.ISSUER_NAME as string;
@@ -73,9 +77,8 @@ export function defaultHandlersFactory<E extends IdEntity>(
     deleteHandler: APIGatewayProxyHandler
 } {
     return {
-        createHandler: async (event, context) => {
-            const credentials = getCognitoCredentials(event);
-            const dao = daoBuilderCredentials(credentials, daoFactory)
+        createHandler: async (event: APIGatewayProxyEvent, context) => {
+            const dao = daoBuilderCredentials(event, daoFactory)
             const crudHandlers = new CrudHandlers<E>(
                 dao,
                 nameProperty,
@@ -85,8 +88,7 @@ export function defaultHandlersFactory<E extends IdEntity>(
             return crudHandlers.createHandler(event, context);
         },
         createHandlerValidation: async (event, context, validationCallback: ValidationCallback<E>) => {
-            const credentials = getCognitoCredentials(event);
-            const dao = daoBuilderCredentials(credentials, daoFactory)
+            const dao = daoBuilderCredentials(event, daoFactory)
             const crudHandlers = new CrudHandlers<E>(
                 dao,
                 nameProperty,
@@ -96,8 +98,7 @@ export function defaultHandlersFactory<E extends IdEntity>(
             return crudHandlers.createHandlerValidation(event, context, validationCallback);
         },
         deleteHandler: async (event, context) => {
-            const credentials = getCognitoCredentials(event);
-            const dao = daoBuilderCredentials(credentials, daoFactory)
+            const dao = daoBuilderCredentials(event, daoFactory)
             const crudHandlers = new CrudHandlers<E>(
                 dao,
                 nameProperty,
@@ -127,8 +128,7 @@ export function defaultHandlersFactory<E extends IdEntity>(
             return crudHandlers.listHandler(event, context);
         },
         updateHandlerValidation: async (event, context, validationCallback) => {
-            const credentials = getCognitoCredentials(event);
-            const dao = daoBuilderCredentials(credentials, daoFactory)
+            const dao = daoBuilderCredentials(event, daoFactory)
             const crudHandlers = new CrudHandlers<E>(
                 dao,
                 nameProperty,
@@ -138,14 +138,11 @@ export function defaultHandlersFactory<E extends IdEntity>(
             return crudHandlers.updateHandlerValidation(event, context, validationCallback);
         },
         updateHandler: async (event, context) => {
-            console.log('eventt', event);
-            console.log('contextt', context);
             const jwtPayload = getJwtPayload(getBearerToken(event));
 
             console.log('payload', jwtPayload);
 
-            const credentials = getCognitoCredentials(event);
-            const dao = daoBuilderCredentials(credentials, daoFactory);
+            const dao = daoBuilderCredentials(event, daoFactory);
             const crudHandlers = new CrudHandlers<E>(
                 dao,
                 nameProperty,

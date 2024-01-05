@@ -9,7 +9,8 @@ export abstract class BaseDao<T extends IdEntity> {
 
     protected abstract readonly tableName: string
 
-    constructor(public readonly documentClient: DynamoDBDocument) {
+    constructor(public readonly documentClient: DynamoDBDocument,
+                public readonly userData: CognitoJwtPayload) {
     }
 
     public async checkEntityByName(probe: T): Promise<boolean> {
@@ -28,8 +29,8 @@ export abstract class BaseDao<T extends IdEntity> {
         return !total;
     }
 
-    public async insert(model: T, jwtPayload: CognitoJwtPayload) {
-        model.id = this.generateId(model, jwtPayload);
+    public async insert(model: T) {
+        model.id = this.generateId(model);
         await this.documentClient.put({
             TableName: this.tableName,
             Item: model
@@ -50,9 +51,13 @@ export abstract class BaseDao<T extends IdEntity> {
         }
         await this.documentClient.delete({
             TableName: this.tableName,
-            Key: {id}
+            Key: this.getKeyForUniqueSelection(id)
         })
         return groupModel;
+    }
+
+    protected getKeyForUniqueSelection(id: string) {
+        return {id};
     }
 
     public async exists(id: string): Promise<boolean> {
@@ -69,7 +74,7 @@ export abstract class BaseDao<T extends IdEntity> {
     public async getById(id: string): Promise<T> {
         const result = await this.documentClient.get({
             TableName: this.tableName,
-            Key: {id},
+            Key: this.getKeyForUniqueSelection(id),
             ConsistentRead: false
         });
 
@@ -80,13 +85,17 @@ export abstract class BaseDao<T extends IdEntity> {
         const {updateExpression, expressionAttributeValues} = this.updateCriteria(model);
         await this.documentClient.update({
             TableName: this.tableName,
-            Key: {
-                id: model.id
-            },
+            Key: this.getKeyForUpdate(model),
             UpdateExpression: updateExpression,
             ExpressionAttributeValues: expressionAttributeValues,
         });
         return model;
+    }
+
+    protected getKeyForUpdate(model: T) {
+        return {
+            id: model.id
+        };
     }
 
     protected abstract updateCriteria(model: T): { updateExpression: string, expressionAttributeValues: ParamObject };
@@ -98,7 +107,7 @@ export abstract class BaseDao<T extends IdEntity> {
         };
     }
 
-    protected generateId(model: T, jwtPayload: CognitoJwtPayload): string {
+    protected generateId(model: T): string {
         return uuidv4();
     }
 }

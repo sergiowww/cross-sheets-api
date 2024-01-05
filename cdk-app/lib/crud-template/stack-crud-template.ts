@@ -11,10 +11,10 @@ export type EnvironmentProps = { [key: string]: string };
 
 export abstract class StackCrudTemplate {
 
-    private _table: Table;
+    protected _table: Table;
     public get table(): Table {
         if (!this._table) {
-            const tableProps: TableProps = {
+            this._table = new Table(this.stack, `${this.moduleName}-table`, {
                 partitionKey: {
                     name: 'id',
                     type: AttributeType.STRING
@@ -24,9 +24,7 @@ export abstract class StackCrudTemplate {
                 writeCapacity: 1,
                 tableName: this.tableName,
                 removalPolicy: RemovalPolicy.DESTROY,
-            };
-
-            this._table = new Table(this.stack, `${this.moduleName}-table`, tableProps);
+            });
         }
         return this._table;
     }
@@ -83,10 +81,10 @@ export abstract class StackCrudTemplate {
 
 
     constructor(
-        private readonly stack: Stack,
+        protected readonly stack: Stack,
         private readonly moduleController: string,
-        private readonly moduleName: string,
-        private readonly tableName: string,
+        protected readonly moduleName: string,
+        protected readonly tableName: string,
         private readonly code: AssetCode,
         private readonly restApi: RestApi,
         private readonly cognitoConfig: CognitoConfig,

@@ -4,7 +4,7 @@ import {GroupModel} from "./models/group-model";
 
 
 const handlers = defaultHandlersFactory<GroupModel>(
-    documentClient => new GroupsDao(documentClient),
+    (documentClient, userData) => new GroupsDao(documentClient, userData),
     'g_name',
     'Group'
 );

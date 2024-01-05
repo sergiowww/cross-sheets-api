@@ -74,8 +74,6 @@ export class CrossSheetsAppStack extends Stack {
 
         const fineGrainedPolicyForIndividualResults = new PolicyStatement({
             actions: [
-                "dynamodb:BatchGetItem",
-                "dynamodb:ConditionCheckItem",
                 "dynamodb:GetItem",
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
@@ -85,10 +83,11 @@ export class CrossSheetsAppStack extends Stack {
             resources: [
                 resultsCrudTemplate.table.tableArn
             ],
+            sid: 'AllowUsersToQueryOnlyTheirData',
             conditions: {
-                "ForAllValues:StringLike": {
+                "ForAllValues:StringEquals": {
                     "dynamodb:LeadingKeys": [
-                        '${cognito-identity.amazonaws.com:email}_*'
+                        '${cognito-identity.amazonaws.com:username}'
                     ]
                 }
             }
