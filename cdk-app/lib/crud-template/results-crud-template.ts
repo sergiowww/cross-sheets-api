@@ -13,6 +13,10 @@ export class ResultsCrudTemplate extends StackCrudTemplate {
                         name: 'id',
                         type: AttributeType.STRING
                     },
+                    sortKey: {
+                        name: 'username',
+                        type: AttributeType.STRING
+                    },
                     billingMode: BillingMode.PROVISIONED,
                     readCapacity: 1,
                     writeCapacity: 1,

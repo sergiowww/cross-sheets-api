@@ -7,7 +7,6 @@ import {RestApi} from "aws-cdk-lib/aws-apigateway";
 import {BenchmarksCrudTemplate} from "./crud-template/benchmarks-crud-template";
 import {ResultsCrudTemplate} from "./crud-template/results-crud-template";
 import {CognitoConfig} from "./cognito-config";
-import {Effect, PolicyStatement} from "aws-cdk-lib/aws-iam";
 
 
 export class CrossSheetsAppStack extends Stack {
@@ -65,39 +64,41 @@ export class CrossSheetsAppStack extends Stack {
             this,
             'results-controller',
             'results',
-            'results',
+            'results_new',
             this.code,
             this.restApi,
             this.cognitoConfig,
             benchmarksCrudTemplate.environment
         );
 
-        const fineGrainedPolicyForIndividualResults = new PolicyStatement({
-            actions: [
-                "dynamodb:GetItem",
-                "dynamodb:GetRecords",
-                "dynamodb:GetShardIterator",
-                "dynamodb:Query",
-                "dynamodb:Scan"
-            ],
-            resources: [
-                resultsCrudTemplate.table.tableArn
-            ],
-            sid: 'AllowUsersToQueryOnlyTheirData',
-            conditions: {
-                "ForAllValues:StringEquals": {
-                    "dynamodb:LeadingKeys": [
-                        '${cognito-identity.amazonaws.com:username}'
-                    ]
-                }
-            }
-            ,
-            effect: Effect.ALLOW
-        });
-        resultsCrudTemplate.table.grantWriteData(this.cognitoConfig.adminRole);
-        resultsCrudTemplate.table.grantWriteData(this.cognitoConfig.userRole);
-        this.cognitoConfig.adminRole.addToPolicy(fineGrainedPolicyForIndividualResults);
-        this.cognitoConfig.userRole.addToPolicy(fineGrainedPolicyForIndividualResults);
+        // const fineGrainedPolicyForIndividualResults = new PolicyStatement({
+        //     actions: [
+        //         "dynamodb:GetItem",
+        //         "dynamodb:GetRecords",
+        //         "dynamodb:GetShardIterator",
+        //         "dynamodb:Query",
+        //         "dynamodb:Scan"
+        //     ],
+        //     resources: [
+        //         resultsCrudTemplate.table.tableArn,
+        //     ],
+        //     sid: 'AllowUsersToQueryOnlyTheirData',
+        //     conditions: {
+        //         "ForAllValues:StringEquals": {
+        //             "dynamodb:LeadingKeys": [
+        //                 '${cognito-identity.amazonaws.com:username}'
+        //             ]
+        //         }
+        //     }
+        //     ,
+        //     effect: Effect.ALLOW
+        // });
+        // resultsCrudTemplate.table.grantWriteData(this.cognitoConfig.adminRole);
+        // resultsCrudTemplate.table.grantWriteData(this.cognitoConfig.userRole);
+        // this.cognitoConfig.adminRole.addToPolicy(fineGrainedPolicyForIndividualResults);
+        // this.cognitoConfig.userRole.addToPolicy(fineGrainedPolicyForIndividualResults);
+        resultsCrudTemplate.grantReadWriteForUserAccess();
+        resultsCrudTemplate.grantReadWriteForAdminAccess();
 
     }
 

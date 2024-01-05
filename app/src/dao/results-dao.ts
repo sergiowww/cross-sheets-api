@@ -52,10 +52,17 @@ export class ResultsDao extends BaseDao<ResultModel> {
         };
     }
 
-    protected getKeyForUniqueSelection(id: string){
-        return {
-            id,
-            username: this.userData["cognito:username"]
-        };
+    async getById(id: string): Promise<ResultModel> {
+        const queryResult = await this.documentClient.query({
+            KeyConditionExpression: 'id = :id and username = :username',
+            ExpressionAttributeValues: {
+                ':username': this.userData["cognito:username"],
+                ':id': id
+            },
+            TableName: this.tableName
+        });
+        const allItems = queryResult.Items as ResultModel[];
+        const [result] = allItems
+        return result;
     }
 }

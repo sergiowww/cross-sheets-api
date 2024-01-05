@@ -5,7 +5,6 @@ import {AttributeType, BillingMode, Table} from "aws-cdk-lib/aws-dynamodb";
 import {HttpMethod} from "aws-cdk-lib/aws-apigatewayv2";
 import * as jsonSchema from "aws-cdk-lib/aws-apigateway/lib/json-schema";
 import {CognitoConfig} from "../cognito-config";
-import {TableProps} from "aws-cdk-lib/aws-dynamodb/lib/table";
 
 export type EnvironmentProps = { [key: string]: string };
 

@@ -107,7 +107,7 @@ export abstract class BaseDao<T extends IdEntity> {
         };
     }
 
-    protected generateId(model: T): string {
+    protected generateId(_: T): string {
         return uuidv4();
     }
 }
