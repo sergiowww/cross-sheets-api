@@ -65,4 +65,9 @@ export class ResultsDao extends BaseDao<ResultModel> {
         const [result] = allItems
         return result;
     }
+
+    // protected generateId(_: ResultModel): string {
+    //     const sequential = Math.trunc(Math.random() * 1000000);
+    //     return this.userData["cognito:username"] + '_' + sequential;
+    // }
 }

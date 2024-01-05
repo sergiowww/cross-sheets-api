@@ -71,6 +71,7 @@ export class CrossSheetsAppStack extends Stack {
             benchmarksCrudTemplate.environment
         );
 
+
         // const fineGrainedPolicyForIndividualResults = new PolicyStatement({
         //     actions: [
         //         "dynamodb:GetItem",
@@ -81,22 +82,23 @@ export class CrossSheetsAppStack extends Stack {
         //     ],
         //     resources: [
         //         resultsCrudTemplate.table.tableArn,
+        //         `${resultsCrudTemplate.table.tableArn}/index/*`
         //     ],
         //     sid: 'AllowUsersToQueryOnlyTheirData',
         //     conditions: {
-        //         "ForAllValues:StringEquals": {
+        //         "ForAllValues:StringLike": {
         //             "dynamodb:LeadingKeys": [
-        //                 '${cognito-identity.amazonaws.com:username}'
+        //                 '${cognito-identity.amazonaws.com:username}_*'
         //             ]
         //         }
-        //     }
-        //     ,
+        //     },
         //     effect: Effect.ALLOW
         // });
         // resultsCrudTemplate.table.grantWriteData(this.cognitoConfig.adminRole);
         // resultsCrudTemplate.table.grantWriteData(this.cognitoConfig.userRole);
         // this.cognitoConfig.adminRole.addToPolicy(fineGrainedPolicyForIndividualResults);
         // this.cognitoConfig.userRole.addToPolicy(fineGrainedPolicyForIndividualResults);
+
         resultsCrudTemplate.grantReadWriteForUserAccess();
         resultsCrudTemplate.grantReadWriteForAdminAccess();
 
