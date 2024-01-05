@@ -68,14 +68,22 @@ export abstract class StackCrudTemplate {
         return this._deleteFn;
     }
 
-    get environment(): EnvironmentProps {
+    public get environment(): EnvironmentProps {
         const tablePrefix = this.moduleName.toUpperCase();
         const tableEnvironment = `${tablePrefix}_TABLE_NAME`
         const environment: { [key: string]: string } = {};
         environment[tableEnvironment] = this.tableName
         environment['IDENTITY_POOL_ID'] = this.cognitoConfig.identityPool.identityPoolId
         environment['ISSUER_NAME'] = this.cognitoConfig.issuerName;
-        return {...environment, ...this.additionalEnv};
+        const fromMyOwn = this.additionalEnvironmentVariables;
+        if (!fromMyOwn) {
+            return {...environment, ...this.additionalEnv};
+        }
+        return {...environment, ...this.additionalEnv, ...fromMyOwn};
+    }
+
+    protected get additionalEnvironmentVariables(): EnvironmentProps | null {
+        return null;
     }
 
 

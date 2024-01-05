@@ -3,6 +3,18 @@ import {ResultModel} from "../models/result-model";
 import {CognitoJwtPayload} from "../models/cognito-jwt-payload";
 
 export class ResultsDao extends BaseDao<ResultModel> {
+
+    private readonly updateExpression: Array<keyof ResultModel> = [
+        'id_benchmark',
+        'result_time',
+        'result_reps',
+        'result_round',
+        'result_weight',
+        'category',
+        'date_of_execution',
+        'place',
+        'notes'
+    ];
     protected readonly tableName: string = process.env.RESULTS_TABLE_NAME as string;
 
 
@@ -14,34 +26,30 @@ export class ResultsDao extends BaseDao<ResultModel> {
                 ':username': user["cognito:username"]
             },
             TableName: this.tableName,
-            IndexName: 'username_key'
+            IndexName: process.env.USER_INDEX_NAME as string
         });
         return result.Items as ResultModel[];
     }
 
     protected updateCriteria(model: ResultModel): { updateExpression: string; expressionAttributeValues: ParamObject } {
+        const nonNulls = this.updateExpression
+            .filter(key => !!model[key]) as string[];
+        const setFields = nonNulls
+            .map(key => `${key} = :${key}`)
+            .join(', ');
+
+        const expressionAttributeValues = nonNulls.reduce((previousValue, currentValue) => {
+            const key = `:${currentValue}`;
+            // @ts-ignore
+            previousValue[key] = model[currentValue];
+            return previousValue;
+        }, {} as ParamObject);
+
+        console.log('expr', expressionAttributeValues);
+        console.log('var', setFields);
         return {
-            updateExpression: `set  id_benchmark = :id_benchmark, 
-                                    result_time = :result_time, 
-                                    result_reps = :result_reps, 
-                                    result_round = :result_round, 
-                                    result_weight = :result_weight, 
-                                    category = :category, 
-                                    date_of_execution = :date_of_execution, 
-                                    place = :place, 
-                                    notes = :notes 
-            `,
-            expressionAttributeValues: {
-                ':id_benchmark': model.id_benchmark,
-                ':result_time': model.result_time,
-                ':result_reps': model.result_reps,
-                ':result_round': model.result_round,
-                ':result_weight': model.result_weight,
-                ':category': model.category,
-                ':date_of_execution': model.date_of_execution,
-                ':place': model.place,
-                ':notes': model.notes
-            }
+            updateExpression: `set ${setFields}`,
+            expressionAttributeValues
         };
     }
 
@@ -66,8 +74,4 @@ export class ResultsDao extends BaseDao<ResultModel> {
         return result;
     }
 
-    // protected generateId(_: ResultModel): string {
-    //     const sequential = Math.trunc(Math.random() * 1000000);
-    //     return this.userData["cognito:username"] + '_' + sequential;
-    // }
 }

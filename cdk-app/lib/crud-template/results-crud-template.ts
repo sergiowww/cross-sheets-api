@@ -1,39 +1,47 @@
-import {StackCrudTemplate} from "./stack-crud-template";
+import {EnvironmentProps, StackCrudTemplate} from "./stack-crud-template";
 import {JsonSchema, JsonSchemaType} from "aws-cdk-lib/aws-apigateway";
 import {Category} from "../../../app/src/models/category";
 import {AttributeType, BillingMode, Table} from "aws-cdk-lib/aws-dynamodb";
 import {RemovalPolicy} from "aws-cdk-lib";
 
+
+const INDEX_NAME = 'username_key';
 export class ResultsCrudTemplate extends StackCrudTemplate {
 
+    protected get additionalEnvironmentVariables(): EnvironmentProps {
+        return {
+            'USER_INDEX_NAME': INDEX_NAME
+        };
+    }
+
     get table(): Table {
-            if (!this._table) {
-                this._table = new Table(this.stack, `${this.moduleName}-table`, {
-                    partitionKey: {
-                        name: 'id',
-                        type: AttributeType.STRING
-                    },
-                    sortKey: {
-                        name: 'username',
-                        type: AttributeType.STRING
-                    },
-                    billingMode: BillingMode.PROVISIONED,
-                    readCapacity: 1,
-                    writeCapacity: 1,
-                    tableName: this.tableName,
-                    removalPolicy: RemovalPolicy.DESTROY
-                });
-                this._table.addGlobalSecondaryIndex({
-                    partitionKey: {
-                        name: 'username',
-                        type: AttributeType.STRING
-                    },
-                    readCapacity: 1,
-                    writeCapacity: 1,
-                    indexName: 'username_key'
-                })
-            }
-            return this._table;
+        if (!this._table) {
+            this._table = new Table(this.stack, `${this.moduleName}-table`, {
+                partitionKey: {
+                    name: 'id',
+                    type: AttributeType.STRING
+                },
+                sortKey: {
+                    name: 'username',
+                    type: AttributeType.STRING
+                },
+                billingMode: BillingMode.PROVISIONED,
+                readCapacity: 1,
+                writeCapacity: 1,
+                tableName: this.tableName,
+                removalPolicy: RemovalPolicy.DESTROY
+            });
+            this._table.addGlobalSecondaryIndex({
+                partitionKey: {
+                    name: 'username',
+                    type: AttributeType.STRING
+                },
+                readCapacity: 1,
+                writeCapacity: 1,
+                indexName: INDEX_NAME
+            })
+        }
+        return this._table;
 
     }
 
