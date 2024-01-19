@@ -10,8 +10,6 @@ test('SQS Queue and SNS Topic Created', () => {
 
   const template = Template.fromStack(stack);
 
-  template.hasResourceProperties('AWS::SQS::Queue', {
-    VisibilityTimeout: 300
-  });
-  template.resourceCountIs('AWS::SNS::Topic', 1);
+  template.resourceCountIs('AWS::DynamoDB::Table', 3);
+  template.resourceCountIs('AWS::ApiGateway::Deployment', 1);
 });
