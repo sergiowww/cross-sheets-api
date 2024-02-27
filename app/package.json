@@ -4,8 +4,7 @@
   "description": "CrossFit Personal Records",
   "main": "app.js",
   "scripts": {
-    "postbuild": "find ./dist -type d -empty -delete && rimraf ./dist/package*.json",
-    "build": "tsc --build && copyfiles package*.json dist/ && cd dist && npm install --omit=dev",
+    "build": "esbuild src/*.ts --bundle --outdir=dist --platform=node --minify",
     "prebuild": "rimraf dist"
   },
   "keywords": [
@@ -23,7 +22,7 @@
     "@types/aws-lambda": "^8.10.130",
     "@types/node": "^20.10.6",
     "@types/uuid": "^9.0.7",
-    "copyfiles": "^2.4.1",
+    "esbuild": "^0.20.1",
     "rimraf": "^5.0.5",
     "typescript": "~5.3.3"
   },
